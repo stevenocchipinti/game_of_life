@@ -1,9 +1,9 @@
 class GameOfLife
 
-  attr_accessor :grid
+  attr_accessor :live_cells
 
-  def initialize(grid)
-    @grid = grid
+  def initialize(live_cells)
+    @live_cells = live_cells
   end
 
   def neighbour_cells(row, col)
@@ -16,33 +16,26 @@ class GameOfLife
       [row+1, col-1],
       [row+1, col],
       [row+1, col+1]
-    ].select { |r,c| coord_in_grid?(r, c) }
+    ].select { |r,c| r >= 0 && c >= 0 }
   end
 
-  def alive_neighbours(row, col)
+  def live_neighbours(row, col)
     neighbour_cells(row, col).select do |r,c|
-      @grid[r][c]
+      @live_cells.include? [r,c]
     end.count
   end
 
   def iterate
-    new_grid = []
-
-    @grid.count.times do |row|
-      new_grid << []
-      @grid.first.count.times do |column|
-        new_grid[row][column] = next_generation(row, column)
+    new_live_cells = []
+    @live_cells.each do |live_cell|
+      [live_cell] + neighbour_cells(live_cell[0], live_cell[1]).each do |cell|
+        new_live_cells << cell if next_generation(cell[0], cell[1])
       end
     end
-
-    @grid = new_grid
+    @live_cells = new_live_cells.uniq.sort
   end
 
   private
-
-  def coord_in_grid?(row, col)
-    row.between?(0, @grid.count-1) && col.between?(0, @grid.first.count-1)
-  end
 
   # GAME OF LIFE RULES:
   # 1. Loneliness:      Alive cell with < 2 live neighbours dies
@@ -50,10 +43,10 @@ class GameOfLife
   # 3. Overcrowding:    Alive cell with > 3 live neighbours dies
   # 4. Reproduction:    Dead cell with 3 neighbours comes to life
   def next_generation(row, column)
-    if @grid[row][column]
-      alive_neighbours(row, column).between? 2, 3
+    if @live_cells.include? [row, column]
+      live_neighbours(row, column).between? 2, 3
     else
-      alive_neighbours(row, column) == 3
+      live_neighbours(row, column) == 3
     end
   end
 

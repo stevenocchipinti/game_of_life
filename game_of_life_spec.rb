@@ -2,19 +2,13 @@ require './game_of_life'
 
 describe GameOfLife do
 
-  let(:grid) do
-    [
-      [false, false, false],
-      [false, true,  false],
-      [false, false, false]
-    ]
-  end
-  let(:game) { GameOfLife.new grid }
+  let(:live_cells) { [[1,1]] }
+  let(:game) { GameOfLife.new live_cells }
 
   describe "#initialize" do
-    it "stores its initial grid in the @grid instance variable" do
-      game.instance_variable_get(:@grid).should == grid
-      game.grid.should == grid
+    it "stores its initial live cells in the @live_cells instance variable" do
+      game.instance_variable_get(:@live_cells).should == live_cells
+      game.live_cells.should == live_cells
     end
   end
 
@@ -24,33 +18,84 @@ describe GameOfLife do
       game.neighbour_cells(0,1).should == [[0,0], [0,2], [1,0], [1,1], [1,2]]
       game.neighbour_cells(1,1).should == [
         [0,0], [0,1], [0,2],
-        [1,0], [1,2],
+        [1,0],        [1,2],
         [2,0], [2,1], [2,2]
       ]
     end
   end
 
-  describe "#alive_neighbours" do
-    it "returns the number of alive neighbours the given cell has" do
-      game.alive_neighbours(0,0).should == 1
-      game.alive_neighbours(1,1).should == 0
-      game.alive_neighbours(2,0).should == 1
+  describe "#live_neighbours" do
+    it "returns the number of live neighbours the given cell has" do
+      game.live_neighbours(0,0).should == 1
+      game.live_neighbours(1,1).should == 0
+      game.live_neighbours(2,0).should == 1
     end
   end
 
   describe "#iterate" do
-    let(:next_grid) do
-      [
-        [false, false, false],
-        [false, false, false],
-        [false, false, false]
-      ]
+    context "when a given live cell has < 2 live neighbours" do
+      let(:live_cells) { [[1,1]] }
+
+      it "dies" do
+        game.iterate
+        game.live_cells.should == []
+      end
     end
 
-    it "mutates the @grid to represent the next generation" do
-      game.iterate
-      game.grid.should == next_grid
+    context "when a given live cell has 2 or 3 live neighbours" do
+      let(:live_cells) { [[0,0], [0,1], [1,0], [1,1]] }
+
+      it "continues living" do
+        game.iterate
+        game.live_cells.should == [[0,0], [0,1], [1,0], [1,1]]
+      end
     end
+
+    context "when a given live cell has > 3 live neighbours" do
+      let(:live_cells) do
+        [
+          [0,0], [0,1],
+          [1,0], [1,1],
+                        [2,2], [2,3],
+                        [3,2], [3,3],
+        ]
+      end
+
+      it "dies" do
+        next_gen_live_cells = [
+          [0,0], [0,1],
+          [1,0],
+                               [2,3],
+                        [3,2], [3,3],
+        ]
+        game.iterate
+        game.live_cells.should == next_gen_live_cells
+      end
+    end
+
+    context "when a given dead cell has 3 live neighbours" do
+      let(:live_cells) do
+        [
+          [0,0], [0,1],
+          [1,0],
+                               [2,3],
+                        [3,2], [3,3],
+        ]
+      end
+
+      it "comes to life" do
+        next_gen_live_cells = [
+          [0,0], [0,1],
+          [1,0], [1,1],
+                        [2,2], [2,3],
+                        [3,2], [3,3],
+        ]
+
+        game.iterate
+        game.live_cells.should == next_gen_live_cells
+      end
+    end
+
   end
 
 end
